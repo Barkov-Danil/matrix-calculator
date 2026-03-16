@@ -1,8 +1,8 @@
 package com.example.matrix_calculator;
 
 public class Matrix {
-    private int row;
-    private int column;
+    private final int row;
+    private final int column;
     private double data[][];
     private int swapCount = 0;
 
@@ -12,7 +12,14 @@ public class Matrix {
         data = new double[row][column];
     }
 
-    Matrix add(Matrix matrix) {
+    Matrix(Matrix matrix) {
+        this.row = matrix.row;
+        this.column = matrix.column;
+        this.data = matrix.data.clone();
+        this.swapCount = matrix.swapCount;
+    }
+
+    public Matrix add(Matrix matrix) {
         if (row != matrix.row || column != matrix.column) {
             throw new IllegalArgumentException("The matrices have different sizes");
         }
@@ -25,13 +32,7 @@ public class Matrix {
         return result;
     }
 
-    private void sub(int fromRow, int whatRow) {
-        for (int c = 0; c < column; c++) {
-            data[fromRow][c] -= data[whatRow][c];
-        }
-    }
-
-    Matrix sub(Matrix matrix) {
+    public Matrix sub(Matrix matrix) {
         if (row != matrix.row || column != matrix.column) {
             throw new IllegalArgumentException("The matrices have different sizes");
         }
@@ -44,7 +45,7 @@ public class Matrix {
         return result;
     }
 
-    Matrix multi(double a) {
+    public Matrix multi(double a) {
         Matrix result = new Matrix(row, column);
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < column; j++) {
@@ -54,18 +55,12 @@ public class Matrix {
         return result;
     }
 
-    private void multi(double a, int row) {
-        for (int i = 0; i < column; i++) {
-            data[row][i] *= a;
-        }
-    }
-
-    Matrix multi(Matrix matrix) {
+    public Matrix multi(Matrix matrix) {
         if (column != matrix.row) {
             throw new IllegalArgumentException(
                     "The number of columns in the first matrix differs from the number of rows in the second matrix");
         }
-        Matrix result = new Matrix(row, column);
+        Matrix result = new Matrix(row, matrix.column);
         for (int r = 0; r < row; r++) {
             for (int c = 0; c < matrix.column; c++) {
                 double cage = 0;
@@ -78,7 +73,7 @@ public class Matrix {
         return result;
     }
 
-    Matrix transpose(Matrix matrix) {
+    public Matrix transpose() {
         Matrix result = new Matrix(column, row);
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < column; j++) {
@@ -88,10 +83,13 @@ public class Matrix {
         return result;
     }
 
-    boolean isTriangularMatrix() {
+    private boolean isTriangularMatrix() {
+        if(row != column){
+            throw new IllegalArgumentException("The matrix isn't square");
+        }
         for (int i = 0; i < row; i++) {
             for (int j = i + 1; j < column; j++) {
-                if (data[i][j] != 0 || data[j][i] != 0) {
+                if (Math.abs(data[i][j]) > 1e-10 || Math.abs(data[j][i]) > 1e-10) {
                     return false;
                 }
             }
@@ -99,11 +97,19 @@ public class Matrix {
         return true;
     }
 
-    boolean hasZeroLine() {
+    private double calculateDetTriangularMatrix() {
+        double determinant = 1;
+        for (int i = 0; i < row; i++) {
+            determinant *= data[i][i];
+        }
+        return determinant * Math.pow(-1, swapCount);
+    }
+
+    private boolean hasZeroLine() {
         for (int i = 0; i < row; i++) {
             boolean flag = true;
             for (int j = 0; j < column; j++) {
-                if (data[i][j] != 0) {
+                if (Math.abs(data[i][j]) > 1e-10) {
                     flag = false;
                     break;
                 }
@@ -115,7 +121,7 @@ public class Matrix {
         for (int i = 0; i < column; i++) {
             boolean flag = true;
             for (int j = 0; j < row; j++) {
-                if (data[j][i] != 0) {
+                if (Math.abs(data[j][i]) > 1e-10) {
                     flag = false;
                     break;
                 }
@@ -127,53 +133,46 @@ public class Matrix {
         return false;
     }
 
-    private double algebraicComplement(int i, int j) {
-        Matrix complement = new Matrix(row - 1, column - 1);
-        int correctR = 0;
+    private Matrix minor(int i, int j) {
+        Matrix minor = new Matrix(row - 1, column - 1);
+        int minorRow = 0;
         for (int r = 0; r < row; r++) {
-            int correctC = 0;
+            if (r == i) continue;
+            int minorCol = 0;
             for (int c = 0; c < column; c++) {
-                if (c == j) {
-                    correctC = 1;
-                    continue;
-                }
-                if (r == i) {
-                    correctR = 1;
-                    break;
-                }
-                complement.data[r - correctR][c - correctC] = data[r][c];
+                if (c == j) continue;
+                minor.data[minorRow][minorCol] = data[r][c];
+                minorCol++;
             }
+            minorRow++;
         }
-        if ((i + j) % 2 != 0) {
-            for (int c = 0; c < column; c++) {
-                complement.data[0][c] *= -1;
-            }
-        }
-        return complement.det();
+        return minor;
     }
 
-    double det() {
+    private double algebraicComplement(int i, int j) {
+        return Math.pow(-1, i + j) * minor(i, j).det();
+    }
+
+    public double det() {
         if (row != column) {
             throw new IllegalArgumentException("The matrix isn't square");
         }
         if (row == 1) return data[0][0];
         if (row == 2) return data[0][0] * data[1][1] - data[0][1] * data[1][0];
-        double determinant = 1;
-        Matrix copy = this.copy();
-        if (copy.hasZeroLine()) {
+
+        if (hasZeroLine()) {
             return 0;
         }
-        if (copy.isTriangularMatrix()) {
-            for (int i = 0; i < row; i++) {
-                determinant *= copy.data[i][i];
-            }
-            return determinant * Math.pow(-1, swapCount);
+        if (isTriangularMatrix()) {
+            return calculateDetTriangularMatrix();
         }
+        double determinant = 1;
+        Matrix copy = new Matrix(this);
         copy.gauss();
         for (int i = 0; i < row; i++) {
             determinant *= copy.data[i][i];
         }
-        return determinant * Math.pow(-1, swapCount);
+        return determinant * Math.pow(-1, copy.swapCount);
     }
 
     private void swapRow(int i, int j) {
@@ -199,14 +198,43 @@ public class Matrix {
     }
 
     private void gauss() {
-        for (int i = 0; i < column; i++) {
+        for (int i = 0; i < row; i++) {
             findPivot(i);
-            multi(1 / data[i][i], i);
+
+            double divisor = data[i][i];
+            if (Math.abs(divisor) < 1e-10) {
+                continue;
+            }
+
+            for (int j = i; j < column; j++) {
+                data[i][j] /= divisor;
+            }
+
             for (int r = i + 1; r < row; r++) {
-                multi(data[r][i], i);
-                sub(r, i);
-                multi(1 / data[r][i], i);
+                double factor = data[r][i];
+                if (Math.abs(factor) > 1e-10) {
+                    for (int j = i; j < column; j++) {
+                        data[r][j] -= factor * data[i][j];
+                    }
+                }
+            }
+
+        }
+    }
+
+    public int rang() {
+        Matrix copy = new Matrix(this);
+        copy.gauss();
+
+        int rang = 0;
+        for (int i = 0; i < row; i++) {
+            for (int j = 0; j < column; j++) {
+                if (Math.abs(copy.data[i][j]) > 1e-10) {
+                    rang++;
+                    break;
+                }
             }
         }
+        return rang;
     }
 }
