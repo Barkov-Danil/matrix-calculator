@@ -103,10 +103,82 @@ public class MatrixCalculatorService {
         }
 
         steps.addStep("Матрица:", matrixToArray(a));
-        steps.addStep("Вычисляем определитель");
+        steps.addStep("Вычисляем определитель методом Гаусса");
 
-        double det = a.det();
-        steps.addStep("Определитель = " + det);
+        // Создаём копию для работы
+        int n = a.getRow();
+        double[][] working = matrixToArray(a);
+
+        steps.addStep("Начальная матрица:", copyMatrix(working)); // Показываем копию исходной
+
+        int swapCount = 0;
+
+        // Прямой ход метода Гаусса
+        for (int i = 0; i < n; i++) {
+            // Поиск главного элемента
+            int maxRow = i;
+            for (int k = i + 1; k < n; k++) {
+                if (Math.abs(working[k][i]) > Math.abs(working[maxRow][i])) {
+                    maxRow = k;
+                }
+            }
+
+            // Если главный элемент нулевой, определитель = 0
+            if (Math.abs(working[maxRow][i]) < 1e-10) {
+                steps.addStep("Обнаружен нулевой столбец, определитель = 0");
+                return 0.0;
+            }
+
+            // Перестановка строк, если нужно
+            if (maxRow != i) {
+                double[] temp = working[i];
+                working[i] = working[maxRow];
+                working[maxRow] = temp;
+                swapCount++;
+                steps.addStep("Переставляем строки " + (i+1) + " и " + (maxRow+1) + ":", copyMatrix(working));
+            }
+
+            // Обнуляем элементы ниже главного
+            for (int k = i + 1; k < n; k++) {
+                double factor = working[k][i] / working[i][i];
+                if (Math.abs(factor) > 1e-10) {
+                    for (int j = i; j < n; j++) {
+                        working[k][j] -= factor * working[i][j];
+                    }
+                }
+            }
+
+            // Показываем матрицу после исключения (только если есть что показывать)
+            boolean hasChanges = false;
+            for (int k = i + 1; k < n; k++) {
+                for (int j = i; j < n; j++) {
+                    if (Math.abs(working[k][j]) > 1e-10) {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+            }
+            if (hasChanges || i < n-1) {
+                steps.addStep("После исключения переменной x" + (i+1) + ":", copyMatrix(working));
+            }
+        }
+
+        // Вычисляем определитель как произведение диагональных элементов
+        double det = 1.0;
+        for (int i = 0; i < n; i++) {
+            det *= working[i][i];
+        }
+        // Учитываем знак от перестановок
+        if (swapCount % 2 != 0) {
+            det = -det;
+        }
+
+        // Проверка на вырожденность
+        if (Math.abs(det) < 1e-10) {
+            steps.addStep("Определитель = 0 (матрица вырождена)");
+        } else {
+            steps.addStep("Определитель = " + det);
+        }
 
         return det;
     }
@@ -115,12 +187,107 @@ public class MatrixCalculatorService {
         Matrix a = createMatrix(request.getMatrixA());
 
         steps.addStep("Матрица:", matrixToArray(a));
-        steps.addStep("Вычисляем ранг матрицы");
+        steps.addStep("Вычисляем ранг матрицы методом Гаусса");
 
-        int rank = a.rang();
-        steps.addStep("Ранг = " + rank);
+        int rows = a.getRow();
+        int cols = a.getColumn();
 
-        return rank;
+        // Создаём копию для работы
+        double[][] working = matrixToArray(a);
+        steps.addStep("Начальная матрица:", copyMatrix(working));
+
+        int rank = 0;
+        int stepNumber = 1;
+
+        // Прямой ход метода Гаусса
+        for (int i = 0; i < Math.min(rows, cols); i++) {
+            steps.addStep("Шаг " + stepNumber++ + ": рассматриваем столбец " + (i+1));
+
+            // Поиск главного элемента в текущем столбце начиная со строки rank
+            int pivotRow = -1;
+            for (int r = rank; r < rows; r++) {
+                if (Math.abs(working[r][i]) > 1e-10) {
+                    pivotRow = r;
+                    break;
+                }
+            }
+
+            // Если нашли ненулевой элемент
+            if (pivotRow != -1) {
+                steps.addStep("  Найден ненулевой элемент в строке " + (pivotRow+1) +
+                        ", значение = " + working[pivotRow][i]);
+
+                // Переставляем строки, если нужно
+                if (pivotRow != rank) {
+                    double[] temp = working[rank];
+                    working[rank] = working[pivotRow];
+                    working[pivotRow] = temp;
+                    steps.addStep("  Переставляем строки " + (rank+1) + " и " + (pivotRow+1) + ":",
+                            copyMatrix(working));
+                } else {
+                    steps.addStep("  Элемент уже на нужной позиции");
+                }
+
+                // Нормируем текущую строку (для наглядности)
+                double pivot = working[rank][i];
+                steps.addStep("  Ведущий элемент = " + pivot);
+
+                // Обнуляем элементы в этом столбце в других строках
+                int zeroCount = 0;
+                for (int r = 0; r < rows; r++) {
+                    if (r != rank && Math.abs(working[r][i]) > 1e-10) {
+                        double factor = working[r][i] / pivot;
+                        for (int j = i; j < cols; j++) {
+                            working[r][j] -= factor * working[rank][j];
+                        }
+                        zeroCount++;
+                    }
+                }
+
+                if (zeroCount > 0) {
+                    steps.addStep("  Обнуляем элементы в столбце " + (i+1) +
+                            " в " + zeroCount + " других строках:", copyMatrix(working));
+                } else {
+                    steps.addStep("  В столбце " + (i+1) + " больше нет ненулевых элементов");
+                }
+
+                rank++;
+                steps.addStep("  Текущий ранг = " + rank);
+            } else {
+                steps.addStep("  В столбце " + (i+1) + " нет ненулевых элементов, пропускаем");
+            }
+        }
+
+        steps.addStep("Преобразованная матрица к ступенчатому виду:", copyMatrix(working));
+
+        // Подсчитываем количество ненулевых строк
+        int nonZeroRows = 0;
+        StringBuilder rankExplanation = new StringBuilder();
+        rankExplanation.append("Находим количество линейно независимых строк:\n");
+
+        for (int i = 0; i < rows; i++) {
+            boolean isZeroRow = true;
+            for (int j = 0; j < cols; j++) {
+                if (Math.abs(working[i][j]) > 1e-10) {
+                    isZeroRow = false;
+                    break;
+                }
+            }
+            if (!isZeroRow) {
+                nonZeroRows++;
+                rankExplanation.append("  Строка ").append(i+1).append(" содержит ненулевые элементы\n");
+            } else {
+                rankExplanation.append("  Строка ").append(i+1).append(" нулевая\n");
+            }
+        }
+
+        steps.addStep(rankExplanation.toString());
+
+        int finalRank = Math.min(rank, nonZeroRows);
+        steps.addStep("Ранг матрицы = " + finalRank +
+                " (количество линейно независимых строк/столбцов)");
+
+        return finalRank;
     }
 
     private Object handleInverse(MatrixRequest request) {
