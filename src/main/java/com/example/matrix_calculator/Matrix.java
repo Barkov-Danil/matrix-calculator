@@ -6,10 +6,19 @@ public class Matrix {
     private double data[][];
     private int swapCount = 0;
 
-    Matrix(int row, int column) {
+    public Matrix(int row, int column) {
         this.row = row;
         this.column = column;
         data = new double[row][column];
+    }
+
+    public Matrix(double[][] data) {
+        this.row = data.length;
+        this.column = data[0].length;
+        this.data = new double[row][column];
+        for (int i = 0; i < row; i++) {
+            System.arraycopy(data[i], 0, this.data[i], 0, column);
+        }
     }
 
     Matrix(Matrix matrix) {
@@ -21,7 +30,7 @@ public class Matrix {
 
     public Matrix add(Matrix matrix) {
         if (row != matrix.row || column != matrix.column) {
-            throw new IllegalArgumentException("The matrices have different sizes");
+            throw new IllegalArgumentException("Матрицы разного размера");
         }
         Matrix result = new Matrix(row, column);
         for (int r = 0; r < row; r++) {
@@ -34,7 +43,7 @@ public class Matrix {
 
     public Matrix sub(Matrix matrix) {
         if (row != matrix.row || column != matrix.column) {
-            throw new IllegalArgumentException("The matrices have different sizes");
+            throw new IllegalArgumentException("Матрицы разного размера");
         }
         Matrix result = new Matrix(row, column);
         for (int i = 0; i < row; i++) {
@@ -58,7 +67,7 @@ public class Matrix {
     public Matrix multi(Matrix matrix) {
         if (column != matrix.row) {
             throw new IllegalArgumentException(
-                    "The number of columns in the first matrix differs from the number of rows in the second matrix");
+                    "Число столбцов первой матрицы не равно числу строк второй");
         }
         Matrix result = new Matrix(row, matrix.column);
         for (int r = 0; r < row; r++) {
@@ -83,10 +92,20 @@ public class Matrix {
         return result;
     }
 
+    public void set(int r, int c, double val) {
+        data[r][c] = val;
+    }
+
+    public int getRow() { return row; }
+    public int getColumn() { return column; }
+    public double getVal(int row, int col) {
+        System.out.println("getVal(" + row + "," + col + ") = " + data[row][col]);
+        return data[row][col];
+    }
+    public double[][] getData() { return data; }
+
     private boolean isTriangularMatrix() {
-        if(row != column){
-            throw new IllegalArgumentException("The matrix isn't square");
-        }
+        if (row != column) throw new IllegalArgumentException("Матрица не квадратная");
         for (int i = 0; i < row; i++) {
             for (int j = i + 1; j < column; j++) {
                 if (Math.abs(data[i][j]) > 1e-10 || Math.abs(data[j][i]) > 1e-10) {
@@ -99,36 +118,24 @@ public class Matrix {
 
     private double calculateDetTriangularMatrix() {
         double determinant = 1;
-        for (int i = 0; i < row; i++) {
-            determinant *= data[i][i];
-        }
+        for (int i = 0; i < row; i++) determinant *= data[i][i];
         return determinant * Math.pow(-1, swapCount);
     }
 
     private boolean hasZeroLine() {
         for (int i = 0; i < row; i++) {
-            boolean flag = true;
+            boolean allZero = true;
             for (int j = 0; j < column; j++) {
-                if (Math.abs(data[i][j]) > 1e-10) {
-                    flag = false;
-                    break;
-                }
+                if (Math.abs(data[i][j]) > 1e-10) { allZero = false; break; }
             }
-            if (flag) {
-                return true;
-            }
+            if (allZero) return true;
         }
         for (int i = 0; i < column; i++) {
-            boolean flag = true;
+            boolean allZero = true;
             for (int j = 0; j < row; j++) {
-                if (Math.abs(data[j][i]) > 1e-10) {
-                    flag = false;
-                    break;
-                }
+                if (Math.abs(data[j][i]) > 1e-10) { allZero = false; break; }
             }
-            if (flag) {
-                return true;
-            }
+            if (allZero) return true;
         }
         return false;
     }
@@ -149,92 +156,175 @@ public class Matrix {
         return minor;
     }
 
-    private double algebraicComplement(int i, int j) {
-        return Math.pow(-1, i + j) * minor(i, j).det();
-    }
-
     public double det() {
-        if (row != column) {
-            throw new IllegalArgumentException("The matrix isn't square");
-        }
+        if (row != column) throw new IllegalArgumentException("Матрица не квадратная");
         if (row == 1) return data[0][0];
         if (row == 2) return data[0][0] * data[1][1] - data[0][1] * data[1][0];
 
-        if (hasZeroLine()) {
-            return 0;
-        }
-        if (isTriangularMatrix()) {
-            return calculateDetTriangularMatrix();
-        }
-        double determinant = 1;
+        if (hasZeroLine()) return 0;
+        if (isTriangularMatrix()) return calculateDetTriangularMatrix();
+
         Matrix copy = new Matrix(this);
-        copy.gauss();
-        for (int i = 0; i < row; i++) {
-            determinant *= copy.data[i][i];
-        }
-        return determinant * Math.pow(-1, copy.swapCount);
+        if (!copy.gauss()) return 0;
+
+        double determinant = 1.0;
+        for (int i = 0; i < row; i++) determinant *= copy.data[i][i];
+        return (copy.swapCount % 2 == 0) ? determinant : -determinant;
     }
 
     private void swapRow(int i, int j) {
-        double temp;
-        for (int c = 0; c < column; c++) {
-            temp = data[i][c];
-            data[i][c] = data[j][c];
-            data[j][c] = temp;
-        }
+        double[] temp = data[i];
+        data[i] = data[j];
+        data[j] = temp;
     }
 
     private void findPivot(int i) {
-        int numRowWithBiggestNumber = i;
-        for (int c = i + 1; c < column; c++) {
-            if (Math.abs(data[c][i]) > Math.abs(data[numRowWithBiggestNumber][i])) {
-                numRowWithBiggestNumber = c;
-            }
+        int maxRow = i;
+        for (int r = i + 1; r < row; r++) {
+            if (Math.abs(data[r][i]) > Math.abs(data[maxRow][i])) maxRow = r;
         }
-        if (numRowWithBiggestNumber != i) {
-            swapRow(i, numRowWithBiggestNumber);
-            swapCount += 1;
+        if (maxRow != i) {
+            swapRow(i, maxRow);
+            swapCount++;
         }
     }
 
-    private void gauss() {
-        for (int i = 0; i < row; i++) {
+    private boolean gauss() {
+        int n = Math.min(row, column);
+        for (int i = 0; i < n; i++) {
             findPivot(i);
 
-            double divisor = data[i][i];
-            if (Math.abs(divisor) < 1e-10) {
-                continue;
-            }
-
-            for (int j = i; j < column; j++) {
-                data[i][j] /= divisor;
+            // Если pivot = 0, ищем ненулевой элемент в оставшихся строках
+            if (Math.abs(data[i][i]) < 1e-10) {
+                boolean found = false;
+                for (int r = i + 1; r < row; r++) {
+                    if (Math.abs(data[r][i]) > 1e-10) {
+                        swapRow(i, r);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // Весь столбец нулевой - пропускаем
+                    continue;
+                }
             }
 
             for (int r = i + 1; r < row; r++) {
-                double factor = data[r][i];
+                double factor = data[r][i] / data[i][i];
                 if (Math.abs(factor) > 1e-10) {
                     for (int j = i; j < column; j++) {
                         data[r][j] -= factor * data[i][j];
                     }
                 }
             }
-
         }
+        return true;
     }
 
     public int rang() {
         Matrix copy = new Matrix(this);
-        copy.gauss();
+        int n = Math.min(row, column);
+        int rank = 0;
 
-        int rang = 0;
-        for (int i = 0; i < row; i++) {
-            for (int j = 0; j < column; j++) {
-                if (Math.abs(copy.data[i][j]) > 1e-10) {
-                    rang++;
+        for (int i = 0; i < n; i++) {
+            // Ищем ненулевой элемент в столбце i начиная со строки rank
+            int pivotRow = -1;
+            for (int r = rank; r < row; r++) {
+                if (Math.abs(copy.data[r][i]) > 1e-10) {
+                    pivotRow = r;
                     break;
                 }
             }
+
+            if (pivotRow == -1) {
+                continue; // Весь столбец нулевой
+            }
+
+            // Меняем строки местами
+            if (pivotRow != rank) {
+                copy.swapRow(rank, pivotRow);
+            }
+
+            // Обнуляем элементы ниже и ВЫШЕ в этом столбце (полное исключение)
+            for (int r = 0; r < row; r++) {
+                if (r != rank && Math.abs(copy.data[r][i]) > 1e-10) {
+                    double factor = copy.data[r][i] / copy.data[rank][i];
+                    for (int j = 0; j < column; j++) {
+                        copy.data[r][j] -= factor * copy.data[rank][j];
+                    }
+                }
+            }
+
+            rank++;
         }
-        return rang;
+
+        return rank;
+    }
+
+    public Matrix inverse() {
+        if (row != column) throw new IllegalArgumentException("Матрица должна быть квадратной");
+        int n = row;
+        double[][] augmented = new double[n][2 * n];
+
+        for (int i = 0; i < n; i++) {
+            System.arraycopy(data[i], 0, augmented[i], 0, n);
+            augmented[i][n + i] = 1.0;
+        }
+
+        for (int i = 0; i < n; i++) {
+            int maxRow = i;
+            for (int k = i + 1; k < n; k++) {
+                if (Math.abs(augmented[k][i]) > Math.abs(augmented[maxRow][i])) maxRow = k;
+            }
+            if (maxRow != i) {
+                double[] temp = augmented[i];
+                augmented[i] = augmented[maxRow];
+                augmented[maxRow] = temp;
+            }
+
+            double pivot = augmented[i][i];
+            if (Math.abs(pivot) < 1e-10) throw new IllegalArgumentException("Матрица вырождена");
+
+            for (int j = 0; j < 2 * n; j++) augmented[i][j] /= pivot;
+
+            for (int k = 0; k < n; k++) {
+                if (k != i) {
+                    double factor = augmented[k][i];
+                    for (int j = 0; j < 2 * n; j++) {
+                        augmented[k][j] -= factor * augmented[i][j];
+                    }
+                }
+            }
+        }
+
+        Matrix inverse = new Matrix(n, n);
+        for (int i = 0; i < n; i++) {
+            System.arraycopy(augmented[i], n, inverse.data[i], 0, n);
+        }
+        return inverse;
+    }
+
+    public double detSimple() {
+        if (row != column) throw new IllegalArgumentException("Матрица не квадратная");
+
+        if (row == 1) return data[0][0];
+        if (row == 2) return data[0][0] * data[1][1] - data[0][1] * data[1][0];
+        if (row == 3) {
+            // Формула для матрицы 3x3
+            return data[0][0] * (data[1][1] * data[2][2] - data[1][2] * data[2][1])
+                    - data[0][1] * (data[1][0] * data[2][2] - data[1][2] * data[2][0])
+                    + data[0][2] * (data[1][0] * data[2][1] - data[1][1] * data[2][0]);
+        }
+
+        // Для больших матриц используем метод Гаусса
+        Matrix copy = new Matrix(this);
+        if (!copy.gauss()) return 0;
+
+        double det = 1.0;
+        for (int i = 0; i < row; i++) {
+            det *= copy.data[i][i];
+        }
+        return (copy.swapCount % 2 == 0) ? det : -det;
     }
 }
