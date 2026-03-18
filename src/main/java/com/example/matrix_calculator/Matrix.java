@@ -140,7 +140,7 @@ public class Matrix {
         return false;
     }
 
-    private Matrix minor(int i, int j) {
+    public Matrix minor(int i, int j) {
         Matrix minor = new Matrix(row - 1, column - 1);
         int minorRow = 0;
         for (int r = 0; r < row; r++) {

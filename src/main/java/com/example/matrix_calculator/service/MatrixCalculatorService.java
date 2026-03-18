@@ -51,8 +51,8 @@ public class MatrixCalculatorService {
         Matrix a = createMatrix(request.getMatrixA());
         Matrix b = createMatrix(request.getMatrixB());
 
-        steps.addStep("Матрица A: " + matrixToString(a));
-        steps.addStep("Матрица B: " + matrixToString(b));
+        steps.addStep("Матрица A:", matrixToArray(a));
+        steps.addStep("Матрица B:", matrixToArray(b));
 
         Matrix result;
         if ("add".equals(request.getOperation())) {
@@ -66,7 +66,7 @@ public class MatrixCalculatorService {
             result = a.multi(b);
         }
 
-        steps.addStep("Результат: " + matrixToString(result));
+        steps.addStep("Результат:", matrixToArray(result));
         return result.getData();
     }
 
@@ -74,11 +74,11 @@ public class MatrixCalculatorService {
         Matrix a = createMatrix(request.getMatrixA());
         double scalar = request.getScalar();
 
-        steps.addStep("Матрица A: " + matrixToString(a));
+        steps.addStep("Матрица A:", matrixToArray(a));
         steps.addStep("Умножаем на число: " + scalar);
 
         Matrix result = a.multi(scalar);
-        steps.addStep("Результат: " + matrixToString(result));
+        steps.addStep("Результат:", matrixToArray(result));
 
         return result.getData();
     }
@@ -86,11 +86,11 @@ public class MatrixCalculatorService {
     private Object handleTranspose(MatrixRequest request) {
         Matrix a = createMatrix(request.getMatrixA());
 
-        steps.addStep("Исходная матрица: " + matrixToString(a));
+        steps.addStep("Исходная матрица:", matrixToArray(a));
         steps.addStep("Транспонируем");
 
         Matrix result = a.transpose();
-        steps.addStep("Результат: " + matrixToString(result));
+        steps.addStep("Результат (транспонированная матрица):", matrixToArray(result));
 
         return result.getData();
     }
@@ -102,7 +102,7 @@ public class MatrixCalculatorService {
             throw new IllegalArgumentException("Определитель можно вычислить только для квадратной матрицы");
         }
 
-        steps.addStep("Матрица: " + matrixToString(a));
+        steps.addStep("Матрица:", matrixToArray(a));
         steps.addStep("Вычисляем определитель");
 
         double det = a.det();
@@ -114,7 +114,7 @@ public class MatrixCalculatorService {
     private Object handleRank(MatrixRequest request) {
         Matrix a = createMatrix(request.getMatrixA());
 
-        steps.addStep("Матрица: " + matrixToString(a));
+        steps.addStep("Матрица:", matrixToArray(a));
         steps.addStep("Вычисляем ранг матрицы");
 
         int rank = a.rang();
@@ -130,7 +130,7 @@ public class MatrixCalculatorService {
             throw new IllegalArgumentException("Обратную матрицу можно найти только для квадратной матрицы");
         }
 
-        steps.addStep("Матрица: " + matrixToString(a));
+        steps.addStep("Матрица A:", matrixToArray(a));
         steps.addStep("Проверяем определитель");
 
         double det = a.det();
@@ -139,10 +139,47 @@ public class MatrixCalculatorService {
         }
 
         steps.addStep("Определитель = " + det + " ≠ 0, матрица невырождена");
-        steps.addStep("Вычисляем обратную матрицу методом Гаусса-Жордана");
 
-        Matrix result = a.inverse();
-        steps.addStep("Результат: " + matrixToString(result));
+        // Вычисляем матрицу алгебраических дополнений
+        steps.addStep("Вычисляем матрицу алгебраических дополнений:");
+        int n = a.getRow();
+        double[][] cofactorMatrix = new double[n][n];
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                // Получаем минор
+                Matrix minor = a.minor(i, j);
+                double minorDet = minor.det();
+                // Алгебраическое дополнение = (-1)^(i+j) * det(минор)
+                double cofactor = ((i + j) % 2 == 0) ? minorDet : -minorDet;
+                cofactorMatrix[i][j] = cofactor;
+            }
+        }
+
+        steps.addStep("Матрица алгебраических дополнений:", cofactorMatrix);
+
+        // Транспонируем матрицу алгебраических дополнений (получаем союзную матрицу)
+        double[][] adjugateMatrix = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                adjugateMatrix[i][j] = cofactorMatrix[j][i];
+            }
+        }
+
+        steps.addStep("Союзная матрица (транспонированная матрица алгебраических дополнений):", adjugateMatrix);
+
+        // Делим каждый элемент на определитель
+        steps.addStep("Делим каждый элемент союзной матрицы на определитель det(A) = " + det);
+
+        double[][] inverseData = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                inverseData[i][j] = adjugateMatrix[i][j] / det;
+            }
+        }
+
+        Matrix result = new Matrix(inverseData);
+        steps.addStep("Обратная матрица A⁻¹:", matrixToArray(result));
 
         return result.getData();
     }
@@ -217,7 +254,7 @@ public class MatrixCalculatorService {
         steps.addStep("Находим обратную матрицу A⁻¹");
 
         Matrix aInverse = a.inverse();
-        steps.addStep("A⁻¹ = " + matrixToString(aInverse));
+        steps.addStep("A⁻¹:", matrixToArray(aInverse));
 
         double[] result = new double[a.getRow()];
         for (int i = 0; i < a.getRow(); i++) {
