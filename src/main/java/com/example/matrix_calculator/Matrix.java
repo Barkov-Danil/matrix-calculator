@@ -140,6 +140,42 @@ public class Matrix {
         return false;
     }
 
+    public double algebraicComplement(int i, int j) {
+        System.out.println("\n=== Algebraic Complement for (" + i + "," + j + ") ===");
+        System.out.println("Original matrix values at call time:");
+        for (int r = 0; r < row; r++) {
+            for (int c = 0; c < column; c++) {
+                System.out.print(data[r][c] + " ");
+            }
+            System.out.println();
+        }
+
+        // Создаём минор
+        Matrix minor = new Matrix(row - 1, column - 1);
+        int minorRow = 0;
+        for (int r = 0; r < row; r++) {
+            if (r == i) continue;
+            int minorCol = 0;
+            for (int c = 0; c < column; c++) {
+                if (c == j) continue;
+                minor.data[minorRow][minorCol] = data[r][c];
+                minorCol++;
+            }
+            minorRow++;
+        }
+
+        double minorDet;
+        if (minor.getRow() <= 3) {
+            minorDet = minor.detSimple();
+        } else {
+            minorDet = minor.det();
+        }
+        double result = ((i + j) % 2 == 0) ? minorDet : -minorDet;
+        System.out.println("Algebraic complement = " + result);
+
+        return result;
+    }
+
     public Matrix minor(int i, int j) {
         Matrix minor = new Matrix(row - 1, column - 1);
         int minorRow = 0;
@@ -164,6 +200,7 @@ public class Matrix {
         if (hasZeroLine()) return 0;
         if (isTriangularMatrix()) return calculateDetTriangularMatrix();
 
+        // СОЗДАЁМ КОПИЮ, а не изменяем исходную матрицу!
         Matrix copy = new Matrix(this);
         if (!copy.gauss()) return 0;
 

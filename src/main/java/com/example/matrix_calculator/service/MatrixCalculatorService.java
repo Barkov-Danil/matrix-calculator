@@ -126,14 +126,18 @@ public class MatrixCalculatorService {
     private Object handleInverse(MatrixRequest request) {
         Matrix a = createMatrix(request.getMatrixA());
 
-        if (a.getRow() != a.getColumn()) {
+        // Создаём копию для всех операций
+        Matrix original = new Matrix(a.getData());
+        Matrix forDet = new Matrix(a.getData()); // отдельная копия для определителя
+
+        if (original.getRow() != original.getColumn()) {
             throw new IllegalArgumentException("Обратную матрицу можно найти только для квадратной матрицы");
         }
 
-        steps.addStep("Матрица A:", matrixToArray(a));
+        steps.addStep("Матрица A:", matrixToArray(original));
         steps.addStep("Проверяем определитель");
 
-        double det = a.det();
+        double det = forDet.det(); // используем отдельную копию
         if (Math.abs(det) < 1e-10) {
             throw new IllegalArgumentException("Матрица вырождена (определитель = 0), обратной матрицы не существует");
         }
@@ -142,23 +146,21 @@ public class MatrixCalculatorService {
 
         // Вычисляем матрицу алгебраических дополнений
         steps.addStep("Вычисляем матрицу алгебраических дополнений:");
-        int n = a.getRow();
+        int n = original.getRow();
         double[][] cofactorMatrix = new double[n][n];
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                // Получаем минор
-                Matrix minor = a.minor(i, j);
-                double minorDet = minor.det();
-                // Алгебраическое дополнение = (-1)^(i+j) * det(минор)
-                double cofactor = ((i + j) % 2 == 0) ? minorDet : -minorDet;
+                // Для каждого алгебраического дополнения создаём СВЕЖУЮ копию
+                Matrix temp = new Matrix(original.getData());
+                double cofactor = temp.algebraicComplement(i, j);
                 cofactorMatrix[i][j] = cofactor;
             }
         }
 
         steps.addStep("Матрица алгебраических дополнений:", cofactorMatrix);
 
-        // Транспонируем матрицу алгебраических дополнений (получаем союзную матрицу)
+        // Транспонируем
         double[][] adjugateMatrix = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -166,11 +168,9 @@ public class MatrixCalculatorService {
             }
         }
 
-        steps.addStep("Союзная матрица (транспонированная матрица алгебраических дополнений):", adjugateMatrix);
+        steps.addStep("Союзная матрица:", adjugateMatrix);
 
-        // Делим каждый элемент на определитель
-        steps.addStep("Делим каждый элемент союзной матрицы на определитель det(A) = " + det);
-
+        // Делим на определитель
         double[][] inverseData = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
