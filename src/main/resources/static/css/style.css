@@ -363,3 +363,31 @@ button:hover {
         padding: 10px;
     }
 }
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8em;
+    }
+
+    .matrix input {
+        width: 45px;
+        padding: 8px 3px;
+        font-size: 14px;
+    }
+
+    button {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    #calculate-btn {
+        font-size: 18px;
+        padding: 15px;
+    }
+
+    .steps-matrix-cell {
+        padding: 3px 4px;
+        min-width: 25px;
+        font-size: 11px;
+    }
+}
