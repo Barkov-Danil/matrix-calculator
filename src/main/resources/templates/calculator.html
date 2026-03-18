@@ -12,7 +12,6 @@
 
     <div id="operation-selector"></div>
 
-    <!-- Панель для СЛАУ -->
     <div id="slae-panel" style="display: none;">
         <div class="section">
             <h3>Решение СЛАУ</h3>
@@ -28,7 +27,6 @@
         </div>
     </div>
 
-    <!-- Матрица A (коэффициенты) -->
     <div id="matrix-a-panel">
         <h3>Матрица A <span id="matrix-a-size"></span></h3>
         <div class="size-controls">
@@ -39,7 +37,6 @@
         <div id="matrix-a"></div>
     </div>
 
-    <!-- Матрица B (для обычных операций) -->
     <div id="matrix-b-panel">
         <h3>Матрица B <span id="matrix-b-size"></span></h3>
         <div class="size-controls">
@@ -50,26 +47,22 @@
         <div id="matrix-b"></div>
     </div>
 
-    <!-- Вектор B для СЛАУ -->
     <div id="vector-b-panel" style="display: none;">
         <h3>Вектор правых частей B</h3>
         <div id="vector-b"></div>
     </div>
 
-    <!-- Скаляр -->
     <div id="scalar-panel" style="display: none;">
         <label>Множитель: <input type="number" id="scalar" value="1" step="any"></label>
     </div>
 
     <button id="calculate-btn">Вычислить</button>
 
-    <!-- Промежуточные шаги -->
     <div id="steps-panel" class="steps" style="display: none;">
         <h3>Ход решения:</h3>
         <div id="steps-list"></div>
     </div>
 
-    <!-- Результат -->
     <div id="result"></div>
     <div id="error" class="error" style="display: none;"></div>
 </div>

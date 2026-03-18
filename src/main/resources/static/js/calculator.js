@@ -1,12 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing calculator...');
 
-    // Состояние приложения
     let currentOperation = 'add';
     let operations = {};
     let slaeMethods = {};
 
-    // Загрузка операций при старте
     fetch('/api/operations')
         .then(response => response.json())
         .then(data => {
@@ -14,14 +12,12 @@ document.addEventListener('DOMContentLoaded', function() {
             renderOperationSelector();
         });
 
-    // Загрузка методов СЛАУ
     fetch('/api/slae-methods')
         .then(response => response.json())
         .then(data => {
             slaeMethods = data;
         });
 
-    // Рендер радио-кнопок операций
     function renderOperationSelector() {
         const container = document.getElementById('operation-selector');
         if (!container) return;
@@ -50,13 +46,11 @@ document.addEventListener('DOMContentLoaded', function() {
         currentOperation = e.target.value;
         updatePanelsVisibility();
 
-        // Для СЛАУ проверяем, что матрица квадратная ТОЛЬКО если выбран матричный метод или Крамера
         if (currentOperation === 'slae') {
             const method = document.getElementById('slae-method')?.value;
             const rowsA = parseInt(document.getElementById('rows-a').value);
             const colsA = parseInt(document.getElementById('cols-a').value);
 
-            // Только для матричного метода и метода Крамера нужна квадратная матрица
             if ((method === 'matrix' || method === 'cramer') && rowsA !== colsA) {
                 alert('Для матричного метода и метода Крамера матрица коэффициентов должна быть квадратной. Увеличьте количество столбцов.');
                 document.getElementById('cols-a').value = rowsA;
@@ -74,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const binaryOps = ['add', 'subtract', 'multiply'];
         const scalarOps = ['multiplyScalar'];
 
-        // Обычные операции
         if (matrixBPanel) {
             matrixBPanel.style.display = binaryOps.includes(currentOperation) ? 'block' : 'none';
         }
@@ -82,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
             scalarPanel.style.display = scalarOps.includes(currentOperation) ? 'block' : 'none';
         }
 
-        // СЛАУ
         const isSlae = currentOperation === 'slae';
         if (slaePanel) {
             slaePanel.style.display = isSlae ? 'block' : 'none';
@@ -91,13 +83,11 @@ document.addEventListener('DOMContentLoaded', function() {
             vectorBPanel.style.display = isSlae ? 'block' : 'none';
         }
 
-        // Для СЛАУ скрываем обычную матрицу B
         if (matrixBPanel && isSlae) {
             matrixBPanel.style.display = 'none';
         }
     }
 
-    // Сохранение значений матрицы в localStorage
     function saveMatrixValuesToStorage(prefix) {
         const cells = document.querySelectorAll(`.matrix-cell[data-matrix="${prefix}"]`);
         const values = {};
@@ -113,13 +103,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return values;
     }
 
-    // Загрузка значений матрицы из localStorage
     function loadMatrixValuesFromStorage(prefix) {
         const saved = localStorage.getItem(`matrix_${prefix}`);
         return saved ? JSON.parse(saved) : null;
     }
 
-    // Создание HTML матрицы
     function createMatrixHTML(rows, cols, prefix) {
         const savedValues = loadMatrixValuesFromStorage(prefix);
 
@@ -131,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (savedValues && savedValues[i] && savedValues[i][j] !== undefined) {
                     value = savedValues[i][j];
                 }
-                // Добавляем id и name для устранения предупреждения
                 const cellId = `${prefix}_cell_${i}_${j}`;
                 const cellName = `${prefix}[${i}][${j}]`;
                 html += `<td><input type="number" class="matrix-cell"
@@ -146,8 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Создание HTML для вектора правых частей
-    // Создание HTML для вектора правых частей с id и name
     function createVectorHTML(size) {
         let html = '<div class="vector-container">';
         for (let i = 0; i < size; i++) {
@@ -167,7 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Обновление матрицы A
     function updateMatrixA() {
         const rows = parseInt(document.getElementById('rows-a').value);
         const cols = parseInt(document.getElementById('cols-a').value);
@@ -184,13 +168,11 @@ document.addEventListener('DOMContentLoaded', function() {
             sizeSpan.textContent = `(${rows}×${cols})`;
         }
 
-        // Если это СЛАУ, обновляем вектор
         if (currentOperation === 'slae') {
             updateVectorB();
         }
     }
 
-    // Обновление матрицы B
     function updateMatrixB() {
         const rows = parseInt(document.getElementById('rows-b').value);
         const cols = parseInt(document.getElementById('cols-b').value);
@@ -208,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Обновление вектора B для СЛАУ
     function updateVectorB() {
         const size = parseInt(document.getElementById('rows-a').value);
         const vectorDiv = document.getElementById('vector-b');
@@ -217,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Получение значений вектора B
     function getVectorB() {
         const size = parseInt(document.getElementById('rows-a').value);
         const vector = [];
@@ -228,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return vector;
     }
 
-    // Сбор значений матрицы
     function getMatrixValues(prefix) {
         const rows = prefix === 'A' ?
             parseInt(document.getElementById('rows-a').value) :
@@ -249,18 +228,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return matrix;
     }
 
-    // Инициализация
     console.log('Initializing matrices...');
     updateMatrixA();
     updateMatrixB();
     updateVectorB();
     updatePanelsVisibility();
 
-    // Обработчики кнопок
     document.getElementById('resize-a')?.addEventListener('click', updateMatrixA);
     document.getElementById('resize-b')?.addEventListener('click', updateMatrixB);
 
-    // Обработчики Enter
     document.getElementById('rows-a')?.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') updateMatrixA();
     });
@@ -274,8 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') updateMatrixB();
     });
 
-    // Обработчик вычисления
-    // Обработчик вычисления
     document.getElementById('calculate-btn')?.addEventListener('click', function() {
         const request = {
             operation: currentOperation
@@ -286,7 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const rowsA = parseInt(document.getElementById('rows-a').value);
             const colsA = parseInt(document.getElementById('cols-a').value);
 
-            // Проверка для методов, требующих квадратную матрицу
             if ((method === 'matrix' || method === 'cramer') && rowsA !== colsA) {
                 alert('Для матричного метода и метода Крамера матрица коэффициентов должна быть квадратной!');
                 return;
@@ -321,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayResult(data.data);
                 if (data.steps && data.steps.length > 0) {
                     displaySteps(data.steps);
-                    // Прокрутка к шагам
                     document.getElementById('steps-panel').scrollIntoView({
                         behavior: 'smooth',
                         block: 'nearest'
@@ -344,7 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         else if (Array.isArray(data)) {
             if (data.length > 0 && !Array.isArray(data[0])) {
-                // Вектор (решение СЛАУ)
                 let html = '<h3>Решение системы:</h3><div class="solution-vector">';
                 for (let i = 0; i < data.length; i++) {
                     const val = data[i];
@@ -354,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += '</div>';
                 resultDiv.innerHTML = html;
             } else {
-                // Матрица
                 let html = '<h3>Результат:</h3><table class="matrix result-matrix">';
                 for (let i = 0; i < data.length; i++) {
                     html += '<tr>';
@@ -372,8 +342,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displaySteps(steps) {
-        console.log('Received steps:', steps); // ОТЛАДКА
-
         const stepsPanel = document.getElementById('steps-panel');
         const stepsList = document.getElementById('steps-list');
 
@@ -381,19 +349,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let html = '';
         steps.forEach((step, index) => {
-            console.log(`Step ${index}:`, step); // ОТЛАДКА
-
             html += '<div class="step-item">';
 
-            // Текст шага
             if (step.text) {
                 html += `<div class="step-text">${step.text}</div>`;
             }
 
-            // Если есть матричные данные
             if (step.matrix && step.type) {
-                console.log(`Step ${index} type: ${step.type}, matrix:`, step.matrix); // ОТЛАДКА
-
                 if (step.type === 'matrix') {
                     html += formatMatrixHTML(step.matrix);
                 } else if (step.type === 'vector') {
@@ -421,7 +383,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Функция для красивого отображения матрицы
     function formatMatrixHTML(matrix) {
         if (!matrix || !matrix.length) return '';
 
@@ -433,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<tr>';
             for (let j = 0; j < cols; j++) {
                 const val = matrix[i][j];
-                // Форматируем число
                 let displayVal;
                 if (Number.isInteger(val)) {
                     displayVal = val;
@@ -448,7 +408,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Функция для красивого отображения вектора
     function formatVectorHTML(vector) {
         if (!vector || !vector.length) return '';
 
@@ -471,7 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return html;
     }
 
-    // Функция для форматирования расширенной матрицы (с вертикальной чертой)
     function formatAugmentedMatrixHTML(matrix) {
         console.log('formatAugmentedMatrixHTML called with:', matrix);
 
@@ -489,14 +447,12 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<tr>';
             for (let j = 0; j < cols; j++) {
                 const val = matrix[i][j];
-                // Форматируем число
                 let displayVal;
                 if (Number.isInteger(val)) {
                     displayVal = val;
                 } else {
                     displayVal = val.toFixed(2);
                 }
-                // Добавляем класс last-col для последнего столбца
                 const cellClass = (j === cols - 1) ? 'steps-matrix-cell last-col' : 'steps-matrix-cell';
                 html += `<td class="${cellClass}">${displayVal}</td>`;
             }

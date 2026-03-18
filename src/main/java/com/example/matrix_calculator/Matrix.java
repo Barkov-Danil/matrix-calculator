@@ -98,10 +98,7 @@ public class Matrix {
 
     public int getRow() { return row; }
     public int getColumn() { return column; }
-    public double getVal(int row, int col) {
-        System.out.println("getVal(" + row + "," + col + ") = " + data[row][col]);
-        return data[row][col];
-    }
+    public double getVal(int row, int col) { return data[row][col]; }
     public double[][] getData() { return data; }
 
     private boolean isTriangularMatrix() {
@@ -141,16 +138,6 @@ public class Matrix {
     }
 
     public double algebraicComplement(int i, int j) {
-        System.out.println("\n=== Algebraic Complement for (" + i + "," + j + ") ===");
-        System.out.println("Original matrix values at call time:");
-        for (int r = 0; r < row; r++) {
-            for (int c = 0; c < column; c++) {
-                System.out.print(data[r][c] + " ");
-            }
-            System.out.println();
-        }
-
-        // Создаём минор
         Matrix minor = new Matrix(row - 1, column - 1);
         int minorRow = 0;
         for (int r = 0; r < row; r++) {
@@ -166,14 +153,12 @@ public class Matrix {
 
         double minorDet;
         if (minor.getRow() <= 3) {
-            minorDet = minor.detSimple();
+            minorDet = minor.det();
         } else {
             minorDet = minor.det();
         }
-        double result = ((i + j) % 2 == 0) ? minorDet : -minorDet;
-        System.out.println("Algebraic complement = " + result);
 
-        return result;
+        return ((i + j) % 2 == 0) ? minorDet : -minorDet;
     }
 
     public Matrix minor(int i, int j) {
@@ -200,7 +185,6 @@ public class Matrix {
         if (hasZeroLine()) return 0;
         if (isTriangularMatrix()) return calculateDetTriangularMatrix();
 
-        // СОЗДАЁМ КОПИЮ, а не изменяем исходную матрицу!
         Matrix copy = new Matrix(this);
         if (!copy.gauss()) return 0;
 
@@ -231,7 +215,6 @@ public class Matrix {
         for (int i = 0; i < n; i++) {
             findPivot(i);
 
-            // Если pivot = 0, ищем ненулевой элемент в оставшихся строках
             if (Math.abs(data[i][i]) < 1e-10) {
                 boolean found = false;
                 for (int r = i + 1; r < row; r++) {
@@ -242,7 +225,6 @@ public class Matrix {
                     }
                 }
                 if (!found) {
-                    // Весь столбец нулевой - пропускаем
                     continue;
                 }
             }
@@ -265,7 +247,6 @@ public class Matrix {
         int rank = 0;
 
         for (int i = 0; i < n; i++) {
-            // Ищем ненулевой элемент в столбце i начиная со строки rank
             int pivotRow = -1;
             for (int r = rank; r < row; r++) {
                 if (Math.abs(copy.data[r][i]) > 1e-10) {
@@ -275,15 +256,13 @@ public class Matrix {
             }
 
             if (pivotRow == -1) {
-                continue; // Весь столбец нулевой
+                continue;
             }
 
-            // Меняем строки местами
             if (pivotRow != rank) {
                 copy.swapRow(rank, pivotRow);
             }
 
-            // Обнуляем элементы ниже и ВЫШЕ в этом столбце (полное исключение)
             for (int r = 0; r < row; r++) {
                 if (r != rank && Math.abs(copy.data[r][i]) > 1e-10) {
                     double factor = copy.data[r][i] / copy.data[rank][i];
@@ -340,28 +319,5 @@ public class Matrix {
             System.arraycopy(augmented[i], n, inverse.data[i], 0, n);
         }
         return inverse;
-    }
-
-    public double detSimple() {
-        if (row != column) throw new IllegalArgumentException("Матрица не квадратная");
-
-        if (row == 1) return data[0][0];
-        if (row == 2) return data[0][0] * data[1][1] - data[0][1] * data[1][0];
-        if (row == 3) {
-            // Формула для матрицы 3x3
-            return data[0][0] * (data[1][1] * data[2][2] - data[1][2] * data[2][1])
-                    - data[0][1] * (data[1][0] * data[2][2] - data[1][2] * data[2][0])
-                    + data[0][2] * (data[1][0] * data[2][1] - data[1][1] * data[2][0]);
-        }
-
-        // Для больших матриц используем метод Гаусса
-        Matrix copy = new Matrix(this);
-        if (!copy.gauss()) return 0;
-
-        double det = 1.0;
-        for (int i = 0; i < row; i++) {
-            det *= copy.data[i][i];
-        }
-        return (copy.swapCount % 2 == 0) ? det : -det;
     }
 }

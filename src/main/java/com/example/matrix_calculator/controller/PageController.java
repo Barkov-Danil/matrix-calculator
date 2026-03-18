@@ -8,6 +8,6 @@ public class PageController {
 
     @GetMapping("/")
     public String index() {
-        return "calculator"; // Просто отдаём HTML-страницу
+        return "calculator";
     }
 }

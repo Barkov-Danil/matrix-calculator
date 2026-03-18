@@ -3,8 +3,8 @@ package com.example.matrix_calculator.dto;
 public class StepData {
     private String text;
     private Object matrix;
-    private String type; // "matrix", "vector", "augmented", "text"
-    private int dividerColumn; // для расширенной матрицы - после какого столбца вертикальная черта
+    private String type;
+    private int dividerColumn;
 
     public StepData(String text) {
         this.text = text;
@@ -21,7 +21,7 @@ public class StepData {
         this.text = text;
         this.matrix = matrix;
         this.type = "augmented";
-        this.dividerColumn = matrix[0].length - 1; // последний столбец - правая часть
+        this.dividerColumn = matrix[0].length - 1;
     }
 
     public StepData(String text, double[] vector) {
@@ -30,7 +30,6 @@ public class StepData {
         this.type = "vector";
     }
 
-    // Геттеры
     public String getText() { return text; }
     public Object getMatrix() { return matrix; }
     public String getType() { return type; }

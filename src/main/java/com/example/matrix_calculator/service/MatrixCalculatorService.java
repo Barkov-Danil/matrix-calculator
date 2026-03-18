@@ -18,33 +18,16 @@ public class MatrixCalculatorService {
         steps.clear();
         steps.addStep("Начало вычислений");
 
-        switch (request.getOperation()) {
-            case "add":
-            case "subtract":
-            case "multiply":
-                return handleBinaryOperation(request);
-
-            case "multiplyScalar":
-                return handleScalarMultiplication(request);
-
-            case "transpose":
-                return handleTranspose(request);
-
-            case "determinant":
-                return handleDeterminant(request);
-
-            case "rank":
-                return handleRank(request);
-
-            case "inverse":
-                return handleInverse(request);
-
-            case "slae":
-                return handleSlae(request);
-
-            default:
-                throw new IllegalArgumentException("Неизвестная операция");
-        }
+        return switch (request.getOperation()) {
+            case "add", "subtract", "multiply" -> handleBinaryOperation(request);
+            case "multiplyScalar" -> handleScalarMultiplication(request);
+            case "transpose" -> handleTranspose(request);
+            case "determinant" -> handleDeterminant(request);
+            case "rank" -> handleRank(request);
+            case "inverse" -> handleInverse(request);
+            case "slae" -> handleSlae(request);
+            default -> throw new IllegalArgumentException("Неизвестная операция");
+        };
     }
 
     private Object handleBinaryOperation(MatrixRequest request) {
@@ -105,17 +88,14 @@ public class MatrixCalculatorService {
         steps.addStep("Матрица:", matrixToArray(a));
         steps.addStep("Вычисляем определитель методом Гаусса");
 
-        // Создаём копию для работы
         int n = a.getRow();
         double[][] working = matrixToArray(a);
 
-        steps.addStep("Начальная матрица:", copyMatrix(working)); // Показываем копию исходной
+        steps.addStep("Начальная матрица:", copyMatrix(working));
 
         int swapCount = 0;
 
-        // Прямой ход метода Гаусса
         for (int i = 0; i < n; i++) {
-            // Поиск главного элемента
             int maxRow = i;
             for (int k = i + 1; k < n; k++) {
                 if (Math.abs(working[k][i]) > Math.abs(working[maxRow][i])) {
@@ -123,13 +103,11 @@ public class MatrixCalculatorService {
                 }
             }
 
-            // Если главный элемент нулевой, определитель = 0
             if (Math.abs(working[maxRow][i]) < 1e-10) {
                 steps.addStep("Обнаружен нулевой столбец, определитель = 0");
                 return 0.0;
             }
 
-            // Перестановка строк, если нужно
             if (maxRow != i) {
                 double[] temp = working[i];
                 working[i] = working[maxRow];
@@ -138,7 +116,6 @@ public class MatrixCalculatorService {
                 steps.addStep("Переставляем строки " + (i+1) + " и " + (maxRow+1) + ":", copyMatrix(working));
             }
 
-            // Обнуляем элементы ниже главного
             for (int k = i + 1; k < n; k++) {
                 double factor = working[k][i] / working[i][i];
                 if (Math.abs(factor) > 1e-10) {
@@ -148,7 +125,6 @@ public class MatrixCalculatorService {
                 }
             }
 
-            // Показываем матрицу после исключения (только если есть что показывать)
             boolean hasChanges = false;
             for (int k = i + 1; k < n; k++) {
                 for (int j = i; j < n; j++) {
@@ -163,17 +139,14 @@ public class MatrixCalculatorService {
             }
         }
 
-        // Вычисляем определитель как произведение диагональных элементов
         double det = 1.0;
         for (int i = 0; i < n; i++) {
             det *= working[i][i];
         }
-        // Учитываем знак от перестановок
         if (swapCount % 2 != 0) {
             det = -det;
         }
 
-        // Проверка на вырожденность
         if (Math.abs(det) < 1e-10) {
             steps.addStep("Определитель = 0 (матрица вырождена)");
         } else {
@@ -192,18 +165,15 @@ public class MatrixCalculatorService {
         int rows = a.getRow();
         int cols = a.getColumn();
 
-        // Создаём копию для работы
         double[][] working = matrixToArray(a);
         steps.addStep("Начальная матрица:", copyMatrix(working));
 
         int rank = 0;
         int stepNumber = 1;
 
-        // Прямой ход метода Гаусса
         for (int i = 0; i < Math.min(rows, cols); i++) {
             steps.addStep("Шаг " + stepNumber++ + ": рассматриваем столбец " + (i+1));
 
-            // Поиск главного элемента в текущем столбце начиная со строки rank
             int pivotRow = -1;
             for (int r = rank; r < rows; r++) {
                 if (Math.abs(working[r][i]) > 1e-10) {
@@ -212,12 +182,10 @@ public class MatrixCalculatorService {
                 }
             }
 
-            // Если нашли ненулевой элемент
             if (pivotRow != -1) {
                 steps.addStep("  Найден ненулевой элемент в строке " + (pivotRow+1) +
                         ", значение = " + working[pivotRow][i]);
 
-                // Переставляем строки, если нужно
                 if (pivotRow != rank) {
                     double[] temp = working[rank];
                     working[rank] = working[pivotRow];
@@ -228,11 +196,9 @@ public class MatrixCalculatorService {
                     steps.addStep("  Элемент уже на нужной позиции");
                 }
 
-                // Нормируем текущую строку (для наглядности)
                 double pivot = working[rank][i];
                 steps.addStep("  Ведущий элемент = " + pivot);
 
-                // Обнуляем элементы в этом столбце в других строках
                 int zeroCount = 0;
                 for (int r = 0; r < rows; r++) {
                     if (r != rank && Math.abs(working[r][i]) > 1e-10) {
@@ -260,7 +226,6 @@ public class MatrixCalculatorService {
 
         steps.addStep("Преобразованная матрица к ступенчатому виду:", copyMatrix(working));
 
-        // Подсчитываем количество ненулевых строк
         int nonZeroRows = 0;
         StringBuilder rankExplanation = new StringBuilder();
         rankExplanation.append("Находим количество линейно независимых строк:\n");
@@ -293,9 +258,8 @@ public class MatrixCalculatorService {
     private Object handleInverse(MatrixRequest request) {
         Matrix a = createMatrix(request.getMatrixA());
 
-        // Создаём копию для всех операций
         Matrix original = new Matrix(a.getData());
-        Matrix forDet = new Matrix(a.getData()); // отдельная копия для определителя
+        Matrix forDet = new Matrix(a.getData());
 
         if (original.getRow() != original.getColumn()) {
             throw new IllegalArgumentException("Обратную матрицу можно найти только для квадратной матрицы");
@@ -304,21 +268,19 @@ public class MatrixCalculatorService {
         steps.addStep("Матрица A:", matrixToArray(original));
         steps.addStep("Проверяем определитель");
 
-        double det = forDet.det(); // используем отдельную копию
+        double det = forDet.det();
         if (Math.abs(det) < 1e-10) {
             throw new IllegalArgumentException("Матрица вырождена (определитель = 0), обратной матрицы не существует");
         }
 
         steps.addStep("Определитель = " + det + " ≠ 0, матрица невырождена");
 
-        // Вычисляем матрицу алгебраических дополнений
         steps.addStep("Вычисляем матрицу алгебраических дополнений:");
         int n = original.getRow();
         double[][] cofactorMatrix = new double[n][n];
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                // Для каждого алгебраического дополнения создаём СВЕЖУЮ копию
                 Matrix temp = new Matrix(original.getData());
                 double cofactor = temp.algebraicComplement(i, j);
                 cofactorMatrix[i][j] = cofactor;
@@ -327,7 +289,6 @@ public class MatrixCalculatorService {
 
         steps.addStep("Матрица алгебраических дополнений:", cofactorMatrix);
 
-        // Транспонируем
         double[][] adjugateMatrix = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -337,7 +298,6 @@ public class MatrixCalculatorService {
 
         steps.addStep("Союзная матрица:", adjugateMatrix);
 
-        // Делим на определитель
         double[][] inverseData = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -354,16 +314,6 @@ public class MatrixCalculatorService {
     private Object handleSlae(MatrixRequest request) {
         Matrix a = createMatrix(request.getMatrixA());
         List<Double> b = request.getVectorB();
-
-        // ОТЛАДКА: выводим оригинальную матрицу
-        System.out.println("=== ORIGINAL MATRIX IN SLAE ===");
-        double[][] originalData = matrixToArray(a);
-        for (int i = 0; i < originalData.length; i++) {
-            for (int j = 0; j < originalData[i].length; j++) {
-                System.out.print(originalData[i][j] + " ");
-            }
-            System.out.println();
-        }
 
         if (a.getRow() != b.size()) {
             throw new IllegalArgumentException("Размер матрицы коэффициентов не соответствует размеру вектора правых частей");
@@ -438,7 +388,6 @@ public class MatrixCalculatorService {
     private double[] solveCramerMethod(Matrix a, List<Double> b) {
         int n = a.getRow();
 
-        // Создаём глубокую копию матрицы, чтобы избежать изменений
         double[][] originalCopy = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -458,7 +407,6 @@ public class MatrixCalculatorService {
         for (int k = 0; k < n; k++) {
             steps.addStep("Находим определитель для x" + (k+1));
 
-            // Используем копию, а не оригинальную матрицу
             double[][] akData = new double[n][n];
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
@@ -468,14 +416,6 @@ public class MatrixCalculatorService {
                         akData[i][j] = originalCopy[i][j];
                     }
                 }
-            }
-
-            System.out.println("Matrix A" + (k+1) + " (using copy):");
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    System.out.print(akData[i][j] + " ");
-                }
-                System.out.println();
             }
 
             Matrix ak = new Matrix(akData);
@@ -488,16 +428,6 @@ public class MatrixCalculatorService {
         }
 
         return result;
-    }
-
-    // Вспомогательный метод для печати матрицы
-    private void printMatrix(Matrix m) {
-        for (int i = 0; i < m.getRow(); i++) {
-            for (int j = 0; j < m.getColumn(); j++) {
-                System.out.print(m.getVal(i, j) + "\t");
-            }
-            System.out.println();
-        }
     }
 
     private double[][] copyMatrix(double[][] original) {
@@ -516,7 +446,6 @@ public class MatrixCalculatorService {
         steps.addStep("Метод Гаусса: приводим расширенную матрицу к ступенчатому виду");
         steps.addStep("Размер системы: " + rows + " уравнений, " + cols + " неизвестных");
 
-        // Создаём расширенную матрицу [A|B]
         double[][] augmented = new double[rows][cols + 1];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -527,10 +456,8 @@ public class MatrixCalculatorService {
 
         steps.addStep("Расширенная матрица:", copyMatrix(augmented), true);
 
-        // Прямой ход
         int rank = 0;
         for (int i = 0; i < Math.min(rows, cols); i++) {
-            // Поиск главного элемента
             int maxRow = rank;
             for (int k = rank; k < rows; k++) {
                 if (Math.abs(augmented[k][i]) > Math.abs(augmented[maxRow][i])) {
@@ -569,7 +496,6 @@ public class MatrixCalculatorService {
             rank++;
         }
 
-        // Проверка на совместность
         for (int i = rank; i < rows; i++) {
             double sum = 0;
             for (int j = 0; j < cols; j++) {
@@ -585,7 +511,6 @@ public class MatrixCalculatorService {
             steps.addStep("Система имеет бесконечно много решений. Найдём одно из них.");
         }
 
-        // Обратный ход
         double[] solution = new double[cols];
         boolean[] isBasic = new boolean[cols];
 
@@ -632,65 +557,6 @@ public class MatrixCalculatorService {
         return new Matrix(array);
     }
 
-    private String matrixToString(Matrix m) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < m.getRow(); i++) {
-            if (i > 0) sb.append("; ");
-            for (int j = 0; j < m.getColumn(); j++) {
-                if (j > 0) sb.append(" ");
-                sb.append(String.format("%.2f", m.getVal(i, j)));
-            }
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String matrixToString(double[][] m) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < m.length; i++) {
-            if (i > 0) sb.append("; ");
-            for (int j = 0; j < m[i].length; j++) {
-                if (j > 0) sb.append(" ");
-                sb.append(String.format("%.2f", m[i][j]));
-            }
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String vectorToString(List<Double> v) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < v.size(); i++) {
-            if (i > 0) sb.append(", ");
-            sb.append(String.format("%.2f", v.get(i)));
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String vectorToString(double[] v) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < v.length; i++) {
-            if (i > 0) sb.append(", ");
-            sb.append(String.format("%.2f", v[i]));
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String getMethodName(String method) {
-        switch (method) {
-            case "matrix": return "Матричный метод";
-            case "cramer": return "Метод Крамера";
-            case "gauss": return "Метод Гаусса";
-            default: return method;
-        }
-    }
-
     public List<StepData> getLastSteps() {
         return steps.getSteps();
     }
@@ -711,9 +577,5 @@ public class MatrixCalculatorService {
             result[i] = v.get(i);
         }
         return result;
-    }
-
-    private double[] vectorToArray(double[] v) {
-        return v; // уже массив
     }
 }

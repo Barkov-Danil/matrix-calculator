@@ -227,7 +227,6 @@ button:hover {
     box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
 }
 
-/* Стили для шагов решения - полностью переработаны */
 .steps {
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
@@ -268,7 +267,6 @@ button:hover {
     border-bottom: 1px dashed #dee2e6;
 }
 
-/* Стили для матриц в шагах */
 .steps-matrix {
     border-collapse: collapse;
     margin: 10px 0;
@@ -293,7 +291,6 @@ button:hover {
     border-right: 2px solid #007bff;
 }
 
-/* Стили для векторов */
 .steps-vector {
     display: inline-block;
     margin: 5px 0;
@@ -318,7 +315,6 @@ button:hover {
     }
 }
 
-/* Для мобильных устройств */
 @media (max-width: 768px) {
     body {
         margin: 10px;

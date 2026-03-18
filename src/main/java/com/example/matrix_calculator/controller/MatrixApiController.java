@@ -1,11 +1,8 @@
 package com.example.matrix_calculator.controller;
 
-import com.example.matrix_calculator.Matrix;
 import com.example.matrix_calculator.dto.MatrixRequest;
 import com.example.matrix_calculator.service.MatrixCalculatorService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,20 +61,5 @@ public class MatrixApiController {
         methods.put("cramer", "Метод Крамера");
         methods.put("gauss", "Метод Гаусса");
         return ResponseEntity.ok(methods);
-    }
-
-    @Bean
-    public CommandLineRunner testDeterminant() {
-        return args -> {
-            System.out.println("=== TEST DETERMINANT ===");
-            double[][] data = {
-                    {24, 3, 3},
-                    {12, 5, -3},
-                    {23, 23, 2}
-            };
-            Matrix m = new Matrix(data);
-            double det = m.det();
-            System.out.println("Determinant should be 2100, got: " + det);
-        };
     }
 }

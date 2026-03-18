@@ -5,10 +5,10 @@ import java.util.List;
 public class MatrixRequest {
     private String operation;
     private double scalar;
-    private List<List<Double>> matrixA; // Матрица коэффициентов A
-    private List<List<Double>> matrixB; // Матрица B (для операций с двумя матрицами)
-    private List<Double> vectorB; // Вектор правых частей для СЛАУ
-    private String slaeMethod; // Метод решения СЛАУ: "matrix", "cramer", "gauss"
+    private List<List<Double>> matrixA;
+    private List<List<Double>> matrixB;
+    private List<Double> vectorB;
+    private String slaeMethod;
 
     public String getOperation() { return operation; }
     public void setOperation(String operation) { this.operation = operation; }
