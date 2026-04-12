@@ -10,5 +10,3 @@ public class MatrixCalculatorApplication {
 		SpringApplication.run(MatrixCalculatorApplication.class, args);
 	}
 }
-
-

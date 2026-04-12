@@ -10,6 +10,12 @@
 <div id="app">
     <h1>Матричный калькулятор</h1>
 
+    <div class="mode-selector" style="text-align: center; margin-bottom: 20px;">
+        <button id="mode-matrices" class="mode-btn active">Матрицы</button>
+        <button id="mode-slae" class="mode-btn">СЛАУ</button>
+        <button id="mode-vectors" class="mode-btn">Векторы</button>
+    </div>
+
     <div id="operation-selector"></div>
 
     <div id="slae-panel" style="display: none;">
@@ -25,6 +31,25 @@
                 </label>
             </div>
         </div>
+    </div>
+
+    <div id="vector-a-panel" style="display: none;">
+        <h3>Вектор A</h3>
+        <div id="vector-a-input"></div>
+    </div>
+
+    <div id="vectors-vector-b-panel" style="display: none;">
+        <h3>Вектор B</h3>
+        <div id="vectors-vector-b-input"></div>
+    </div>
+
+    <div id="vector-c-panel" style="display: none;">
+        <h3>Вектор C</h3>
+        <div id="vector-c-input"></div>
+    </div>
+
+    <div id="vector-scalar-panel" style="display: none;">
+        <label>Множитель: <input type="number" id="vector-scalar" value="1" step="any"></label>
     </div>
 
     <div id="matrix-a-panel">
@@ -47,9 +72,9 @@
         <div id="matrix-b"></div>
     </div>
 
-    <div id="vector-b-panel" style="display: none;">
+    <div id="slae-vector-b-panel" style="display: none;">
         <h3>Вектор правых частей B</h3>
-        <div id="vector-b"></div>
+        <div id="slae-vector-b"></div>
     </div>
 
     <div id="scalar-panel" style="display: none;">
